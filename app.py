@@ -8,8 +8,9 @@ from io import BytesIO
 st.title("🕷️ Sitemap Web Scraper Tool")
 st.markdown("Enter your XML sitemap URL to extract and scrape all web pages for clean, human-readable content.")
 
-# Input sitemap URL
-sitemap_url = st.text_input("Enter Sitemap URL", "https://example.com/sitemap.xml")
+# Input sitemap URL with placeholder
+DEFAULT_URL = "https://example.com/sitemap.xml"
+sitemap_url = st.text_input("Enter Sitemap URL", value="", placeholder=DEFAULT_URL).strip() or DEFAULT_URL
 
 # Button
 if st.button("Scrape Sitemap"):
