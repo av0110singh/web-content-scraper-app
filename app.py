@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+from io import BytesIO
 
 # Title
 st.title("🕷️ Sitemap Web Scraper Tool")
@@ -57,7 +58,17 @@ if st.button("Scrape Sitemap"):
         df = pd.DataFrame(results)
         st.success("✅ Scraping complete!")
 
-        st.download_button("📥 Download as Excel", data=df.to_excel(index=False), file_name="sitemap_scraped_output.xlsx")
+        # Save DataFrame to BytesIO buffer
+        buffer = BytesIO()
+        df.to_excel(buffer, index=False, engine='openpyxl')
+        buffer.seek(0)
+
+        st.download_button(
+            "📥 Download as Excel",
+            data=buffer,
+            file_name="sitemap_scraped_output.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
 
         for row in results:
             st.subheader(row['URL'])
