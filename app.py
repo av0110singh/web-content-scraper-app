@@ -16,6 +16,10 @@ st.markdown("Enter your XML sitemap URL to extract and scrape all web pages for 
 DEFAULT_URL = "https://example.com/sitemap.xml"
 sitemap_url = st.text_input("Enter Sitemap URL", value="", placeholder=DEFAULT_URL).strip() or DEFAULT_URL
 
+# Input to exclude URL substrings
+exclusion_input = st.text_input("Exclude URLs containing (comma-separated keywords, optional)")
+exclusion_keywords = [kw.strip() for kw in exclusion_input.split(",") if kw.strip()]
+
 # Button
 if st.button("Scrape Sitemap"):
     try:
@@ -27,7 +31,11 @@ if st.button("Scrape Sitemap"):
             soup = BeautifulSoup(res.content, 'xml')
             urls = [loc.text.strip() for loc in soup.find_all('loc')]
 
-        st.success(f"Found {len(urls)} URLs. Starting scraping...")
+        # Filter URLs based on exclusion list
+        if exclusion_keywords:
+            urls = [url for url in urls if not any(excl in url for excl in exclusion_keywords)]
+
+        st.success(f"Filtered to {len(urls)} URLs. Starting scraping...")
 
         progress_bar = st.progress(0)
         status_text = st.empty()
