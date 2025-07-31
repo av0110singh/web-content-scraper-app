@@ -5,9 +5,11 @@ import pandas as pd
 from io import BytesIO
 from urllib.parse import urlparse
 import os
+import time
+import concurrent.futures
 
 # Title
-st.title("🕷️ Sitemap Web Scraper Tool")
+st.title("🕷️ Bulk Web Content Scraper Tool")
 st.markdown("Enter your XML sitemap URL to extract and scrape all web pages for clean, human-readable content.")
 
 # Input sitemap URL with placeholder
@@ -27,10 +29,13 @@ if st.button("Scrape Sitemap"):
 
         st.success(f"Found {len(urls)} URLs. Starting scraping...")
 
-        @st.cache_data(show_spinner=False)
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        results = []
+
         def scrape_page(url):
             try:
-                r = requests.get(url, timeout=10)
+                r = requests.get(url, timeout=20)
                 s = BeautifulSoup(r.text, 'html.parser')
                 for tag in s(['script', 'style', 'header', 'footer', 'nav']):
                     tag.decompose()
@@ -39,7 +44,7 @@ if st.button("Scrape Sitemap"):
                     if tag.name in ['h1', 'h2', 'h3']:
                         content.append(f"\n# {tag.get_text(strip=True)}\n")
                     elif tag.name == 'p':
-                        text = tag.get_text(strip=True)
+                        text = tag.get_text(" ", strip=True)
                         if text and len(text.split()) > 3:
                             content.append(text)
                     elif tag.name in ['ul', 'ol']:
@@ -48,15 +53,22 @@ if st.button("Scrape Sitemap"):
                             li_text = li.get_text(" ", strip=True)
                             if li_text:
                                 content.append(f"• {li_text}")
-                return "\n\n".join(content).strip()
+                return {"URL": url, "Content": "\n\n".join(content).strip()}
             except Exception as e:
-                return f"Error: {str(e)}"
+                return {"URL": url, "Content": f"Error: {str(e)}"}
 
-        results = []
-        for url in urls[:20]:  # Limit to 20 for demo
-            st.write(f"🔎 Scraping: {url}")
-            content = scrape_page(url)
-            results.append({"URL": url, "Content": content})
+        # Concurrent scraping for performance boost
+        total = len(urls)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            future_to_url = {executor.submit(scrape_page, url): url for url in urls}
+            for i, future in enumerate(concurrent.futures.as_completed(future_to_url)):
+                status_text.text(f"Scraping {i+1}/{total}: {future_to_url[future]}")
+                try:
+                    result = future.result()
+                    results.append(result)
+                except Exception as e:
+                    results.append({"URL": future_to_url[future], "Content": f"Error: {str(e)}"})
+                progress_bar.progress((i + 1) / total)
 
         df = pd.DataFrame(results)
         st.success("✅ Scraping complete!")
@@ -80,7 +92,7 @@ if st.button("Scrape Sitemap"):
 
         for row in results:
             st.subheader(row['URL'])
-            st.write(row['Content'][:1500] + ("..." if len(row['Content']) > 1500 else ""))
+            st.text_area("Content", row['Content'], height=300)
 
     except Exception as e:
         st.error(f"❌ Something went wrong: {e}")
