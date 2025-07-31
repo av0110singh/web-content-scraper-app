@@ -3,6 +3,8 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 from io import BytesIO
+from urllib.parse import urlparse
+import os
 
 # Title
 st.title("🕷️ Sitemap Web Scraper Tool")
@@ -64,10 +66,15 @@ if st.button("Scrape Sitemap"):
         df.to_excel(buffer, index=False, engine='openpyxl')
         buffer.seek(0)
 
+        # Extract filename from sitemap URL
+        parsed_url = urlparse(sitemap_url)
+        file_slug = os.path.basename(parsed_url.path) or "sitemap"
+        filename = f"{file_slug.replace('.xml', '')}_scraped_output.xlsx"
+
         st.download_button(
             "📥 Download as Excel",
             data=buffer,
-            file_name="sitemap_scraped_output.xlsx",
+            file_name=filename,
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
