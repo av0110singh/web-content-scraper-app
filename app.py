@@ -9,7 +9,7 @@ st.title("🕷️ Sitemap Web Scraper Tool")
 st.markdown("Enter your XML sitemap URL to extract and scrape all web pages for clean, human-readable content.")
 
 # Input sitemap URL
-sitemap_url = st.text_input("Enter Sitemap URL", "https://www.buyanyflowers.com/sitemap.xml")
+sitemap_url = st.text_input("Enter Sitemap URL", "https://example.com/sitemap.xml")
 
 # Button
 if st.button("Scrape Sitemap"):
