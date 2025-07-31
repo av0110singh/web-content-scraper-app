@@ -35,20 +35,22 @@ if st.button("Scrape Sitemap"):
 
         def scrape_page(url):
             try:
-                r = requests.get(url, timeout=20)
+                r = requests.get(url, timeout=30)
+                r.encoding = r.apparent_encoding  # Ensure full character decoding
                 s = BeautifulSoup(r.text, 'html.parser')
                 for tag in s(['script', 'style', 'header', 'footer', 'nav']):
                     tag.decompose()
                 content = []
-                for tag in s.find_all(['h1', 'h2', 'h3', 'p', 'ul', 'ol']):
-                    if tag.name in ['h1', 'h2', 'h3']:
-                        content.append(f"\n# {tag.get_text(strip=True)}\n")
-                    elif tag.name == 'p':
-                        text = tag.get_text(" ", strip=True)
+                body = s.body or s  # fallback to entire doc if body is missing
+                for element in body.descendants:
+                    if element.name in ['h1', 'h2', 'h3']:
+                        content.append(f"\n# {element.get_text(strip=True)}\n")
+                    elif element.name == 'p':
+                        text = element.get_text(" ", strip=True)
                         if text and len(text.split()) > 3:
                             content.append(text)
-                    elif tag.name in ['ul', 'ol']:
-                        items = tag.find_all('li')
+                    elif element.name in ['ul', 'ol']:
+                        items = element.find_all('li')
                         for li in items:
                             li_text = li.get_text(" ", strip=True)
                             if li_text:
